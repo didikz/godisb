@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/didikz/godisb/internal/infrastructure"
 	"github.com/didikz/godisb/internal/model"
@@ -116,7 +117,7 @@ func callBankPayment(ctx context.Context, ea *infrastructure.ExternalApi, dis *m
 			return false, "0"
 		}
 		if mandiriResp.Code != "00" {
-			return false, mandiriResp.ParseFailedCode()
+			return false, strconv.Itoa(mandiriResp.ReasonID)
 		}
 		return true, ""
 	default:

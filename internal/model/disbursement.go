@@ -107,7 +107,13 @@ func (d *Disbursement) ToJSONObject() DisbursementResponseObject {
 		remark = *d.Remark
 	}
 	if d.FailedNotes != nil {
-		failedNotes = *d.FailedNotes
+		f := *d.FailedNotes
+		switch f {
+		case "0":
+			failedNotes = "CANT_RECEIVE_FUNDS"
+		default:
+			failedNotes = "BANK_PARTNER_ERROR"
+		}
 	}
 	return DisbursementResponseObject{
 		ID:              d.ID,

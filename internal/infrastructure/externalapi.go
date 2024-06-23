@@ -56,11 +56,11 @@ func (a *ExternalApi) CallPaymentBCA(ctx context.Context, dto BCAPaymentPayload)
 }
 
 func (a *ExternalApi) CallPaymentMandiri(ctx context.Context, dto MandiriPaymentPayload) ([]byte, int, error) {
-	paymentUrl := fmt.Sprintf("%s%s", a.BCAConfig.BaseURL, "/bca/payment")
+	paymentUrl := fmt.Sprintf("%s%s", a.BCAConfig.BaseURL, "/mandiri/payment")
 	buff, _ := json.Marshal(dto)
 	req, _ := http.NewRequest(http.MethodPost, paymentUrl, bytes.NewBuffer(buff))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("X-Api-Key", a.BCAConfig.ApiKey)
+	req.Header.Set("X-Api-Key", a.MandiriConfig.ApiKey)
 	return invoke(req)
 }
 
