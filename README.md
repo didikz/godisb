@@ -13,6 +13,7 @@ An simple REST API endpoint written with Go for disbursed money to the beneficia
 + Clone repo
 + Import API collection to insomnia
 + Import `.sql` file to database
++ Copy config file `cp config.yaml.tmpl config.yaml` and adjust db configuration accordingly
 + run server with command `go run ./cmd/app/main.go`
 
 ## API Features
