@@ -1,23 +1,38 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
-	httpapi "github.com/didikz/godisb/pkg/httpapi"
+	"github.com/didikz/godisb/api/handler"
+	"github.com/didikz/godisb/config"
+	"github.com/didikz/godisb/pkg/db"
 	m "github.com/didikz/godisb/pkg/httpapi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmoiron/sqlx"
 )
 
 type HttpServer struct {
 	listenAddress string
+	db            *sqlx.DB
+	cfg           config.Configuration
 }
 
-func NewHttpServer(listenAddress string) *HttpServer {
+func NewHttpServer(cfg config.Configuration) *HttpServer {
+	dbx := db.NewDB(db.ConfigDB{
+		Driver:   cfg.DB.Driver,
+		Name:     cfg.DB.Name,
+		Host:     cfg.DB.Host,
+		Port:     cfg.DB.Port,
+		User:     cfg.DB.User,
+		Password: cfg.DB.Password,
+	})
 	return &HttpServer{
-		listenAddress: listenAddress,
+		listenAddress: fmt.Sprintf(":%s", cfg.App.Port),
+		db:            dbx,
+		cfg:           cfg,
 	}
 }
 
@@ -26,37 +41,8 @@ func (s *HttpServer) Run() error {
 	r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
 	r.Use(m.HeaderValidator)
-
-	r.Post("/disbursements", handleCreateDisbursement)
+	handler.RegisterHandler(r, s.db, s.cfg)
 
 	log.Println("running server at", s.listenAddress)
 	return http.ListenAndServe(s.listenAddress, r)
-}
-
-func handleCreateDisbursement(w http.ResponseWriter, r *http.Request) {
-	dto := &CreateDisbursementPayload{}
-	if err := json.NewDecoder(r.Body).Decode(dto); err != nil {
-		httpapi.WriteJson(w, http.StatusInternalServerError, httpapi.GeneralResponseError{Error: err.Error()})
-		return
-	}
-
-	remark := ""
-	if dto.Remark != nil {
-		remark = *dto.Remark
-	}
-
-	do := DisbursementResponseObject{
-		ID:              100,
-		Bank:            dto.Bank,
-		AccountNumber:   dto.AccountNumber,
-		BeneficiaryName: "John Doe",
-		Amount:          dto.Amount,
-		Remark:          remark,
-		Status:          "SUCCESS",
-		FailedNotes:     "",
-		CreatedAt:       "2024-10-10 10:10:10",
-		FailedAt:        "",
-		CompletedAt:     "2024-10-10 10:10:10",
-	}
-	httpapi.WriteJson(w, http.StatusOK, do)
 }
