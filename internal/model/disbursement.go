@@ -47,10 +47,10 @@ type Disbursement struct {
 }
 
 type CreateDisbursementPayload struct {
-	Bank          string  `json:"bank"`
-	AccountNumber string  `json:"account_number"`
-	Amount        int64   `json:"amount"`
-	Remark        *string `json:"remark"`
+	Bank          string  `json:"bank" validate:"required,oneof=bca mandiri bni bri"`
+	AccountNumber string  `json:"account_number" validate:"required"`
+	Amount        int64   `json:"amount" validate:"required,numeric"`
+	Remark        *string `json:"remark" validate:"required,max=15"`
 }
 
 type DisbursementResponseObject struct {

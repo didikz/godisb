@@ -11,6 +11,7 @@ import (
 	"github.com/didikz/godisb/internal/store"
 	"github.com/didikz/godisb/pkg/httpapi"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -31,6 +32,13 @@ func (h *handler) CreateDisbursement() http.HandlerFunc {
 		ctx := r.Context()
 		dto := &model.CreateDisbursementPayload{}
 		if err := json.NewDecoder(r.Body).Decode(dto); err != nil {
+			httpapi.WriteJson(w, http.StatusInternalServerError, httpapi.GeneralResponseError{Error: err.Error()})
+			return
+		}
+
+		validate := validator.New()
+		err := validate.Struct(dto)
+		if err != nil {
 			httpapi.WriteJson(w, http.StatusInternalServerError, httpapi.GeneralResponseError{Error: err.Error()})
 			return
 		}
