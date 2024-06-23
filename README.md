@@ -1,25 +1,27 @@
 # GODISB - DISBURSEMENT API
 
-A simple REST API endpoint written with Go for disbursed money to the beneficiary.
+An simple REST API endpoint written with Go for disbursed money to the beneficiary.
 
 ## Setup & Requirements
 
-TBD
++ Go min version 1.16
++ MySQL 5.7 or greater
++ Insomnia REST API Client
 
 ## Installation
 
-TBD
-
-## Development
-
-TBD
++ Clone repo
++ Import API collection to insomnia
++ Import `.sql` file to database
++ run server with command `go run ./cmd/app/main.go`
 
 ## API Features
 
-+ [ ] Error Handling
-+ [ ] Bank Partner Validation
-+ [ ] Idempotency request to prevent double transactions. If request hit using same request id, it will return created transaction instead
-+ [ ] Request signature
++ [x] Error Handling
++ [x] Bank Partner Validation
++ [x] Idempotency request to prevent double transactions. If request hit using same request id, it will return created transaction instead
+
+> Bank Partner Validation is using mock API in [https://app.beeceptor.com/console/godisb](https://app.beeceptor.com/console/godisb)
 
 ## API DOCUMENTATION
 
@@ -28,7 +30,6 @@ TBD
 + Headers:
   + `Content-Type`: `application/json`
   + `X-Idempotency-Key`: unique identifier
-  + `X-Signature`: Request signature
 + Request Payload:
   + `bank` (string, mandatory): Available beneficiary bank codes. Possible values are `bca`, `bni`, `mandiri`, `bri`
   + `account_number` (string, mandatory): Beneficiary bank account number
@@ -107,4 +108,20 @@ TBD
 
 + Failed Response (`4xx`, `5xx`)
 
-  TBD
+  ```json
+  {
+    "error": "error message"
+  }
+  ```
+
+## Testing The API
+
+### Positive Case
+
++ Success create disbursement using bank `bca` and account number `12345678`
+
+### Negative Case
+
++ Create Disbursement using bank `mandiri` and account number `87654321` will failed in validation because blocked account
++ Create Disbursement using bank `mandiri` and account number `87654322` will create a failed transaction
++ Create disbursement using amount > user balance will failed in validation
