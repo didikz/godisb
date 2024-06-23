@@ -39,7 +39,7 @@ func (h *handler) CreateDisbursement() http.HandlerFunc {
 		validate := validator.New()
 		err := validate.Struct(dto)
 		if err != nil {
-			httpapi.WriteJson(w, http.StatusInternalServerError, httpapi.GeneralResponseError{Error: err.Error()})
+			httpapi.WriteJson(w, http.StatusUnprocessableEntity, httpapi.GeneralResponseError{Error: err.Error()})
 			return
 		}
 
