@@ -50,15 +50,30 @@ func (s *DisbursementService) CreateDisbursement(ctx context.Context, p model.Cr
 
 	// create & process disbursement
 	if err != nil && err == sql.ErrNoRows {
+		// check if balance sufficient
+		user, err := s.DisbursementRepository.GetBalanceUser(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+
+		if user.Balance < p.Amount {
+			return nil, fmt.Errorf("insufficient balance")
+		}
+
 		newdis, err := s.DisbursementRepository.CreateDisbursement(ctx, p, *bankAccount, ik, userID)
 		if err != nil {
 			return nil, err
 		}
+		// substract balance amuont
+		_ = s.DisbursementRepository.UpdateBalanceUser(ctx, userID, p.Amount, "subtract")
+
 		// call bank partner
 		status, failedCode := callBankPayment(ctx, &s.ExternalApi, newdis)
 		var updateErr error
 		if !status {
 			updateErr = s.DisbursementRepository.UpdateFailedDisbursement(ctx, newdis.ID, model.DisbursementStatusFailed, failedCode)
+			// when payment failed, revert balance
+			_ = s.DisbursementRepository.UpdateBalanceUser(ctx, userID, p.Amount, "add")
 		} else {
 			updateErr = s.DisbursementRepository.UpdateSuccessDisbursement(ctx, newdis.ID, model.DisbursementStatusSuccess)
 		}

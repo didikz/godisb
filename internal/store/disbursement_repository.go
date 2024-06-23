@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/didikz/godisb/internal/model"
@@ -9,8 +10,11 @@ import (
 )
 
 const (
-	queryGetBankAccount      = `SELECT id, bank, account_number, account_name, status FROM bank_accounts WHERE bank =? AND account_number =?`
-	queryGetDisbursementById = `SELECT id, bank, account_number, beneficiary_name, amount, remark, status, failed_notes, created_at, failed_at, completed_at, idempotency_key 
+	queryGetBalanceUser       = `SELECT balance from users WHERE id = ?`
+	querySubstractBalanceUser = `UPDATE users SET balance = balance - ? WHERE id =?`
+	queryAddBalanceUser       = `UPDATE users SET balance = balance + ? WHERE id =?`
+	queryGetBankAccount       = `SELECT id, bank, account_number, account_name, status FROM bank_accounts WHERE bank =? AND account_number =?`
+	queryGetDisbursementById  = `SELECT id, bank, account_number, beneficiary_name, amount, remark, status, failed_notes, created_at, failed_at, completed_at, idempotency_key 
 											FROM disbursements WHERE id=?`
 	queryGetDisbursementByIdempotencyKey = `SELECT id, bank, account_number, beneficiary_name, amount, remark, status, failed_notes, created_at, failed_at, completed_at, idempotency_key 
 											FROM disbursements WHERE idempotency_key =? AND user_id =?`
@@ -79,9 +83,29 @@ func (r *DisbursementRepository) GetDisbursementByIdempotencyKey(ctx context.Con
 	return &d, nil
 }
 
-func (r *DisbursementRepository) GetUser(id int64) (*model.User, error) {
-	var u *model.User
-	return u, nil
+func (r *DisbursementRepository) GetBalanceUser(ctx context.Context, id int64) (*model.User, error) {
+	u := model.User{}
+	if err := r.DB.Get(&u, queryGetBalanceUser, id); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *DisbursementRepository) UpdateBalanceUser(ctx context.Context, id int64, amount int64, updateType string) error {
+	var q string
+	switch updateType {
+	case "subtract":
+		q = querySubstractBalanceUser
+	case "add":
+		q = queryAddBalanceUser
+	default:
+		q = ""
+	}
+	if q == "" {
+		return fmt.Errorf("unknown update type %s", updateType)
+	}
+	_, err := r.DB.ExecContext(ctx, q, amount, id)
+	return err
 }
 
 func (r *DisbursementRepository) GetBankAccount(ctx context.Context, bank string, accountNumber string) (*model.BankAccount, error) {
